@@ -2,7 +2,7 @@
 # 用以供后续的Parser进行解析
 
 from enum import Enum
-from typing import List
+from typing import Callable, List, Optional
 
 class TokenType(Enum):
     NUM = 0 # 数字
@@ -114,7 +114,7 @@ def parse(tokens:List[Token]):
     i = 0
 
     # 定义一个辅助函数，用于读取下一个 Token
-    def next_token():
+    def next_token()-> Optional[Token]:
         nonlocal i
         if i < len(tokens):
             i += 1
@@ -126,8 +126,8 @@ def parse(tokens:List[Token]):
     def expr():
         left = term()
         token = next_token()
-        while token and token.type in (TokenType.PLUS, TokenType.MINUS):
-            op = token.type
+        while token and token.token_type in (TokenType.PLUS, TokenType.MINUS):
+            op = token.token_type
             right = term()
             left = (op, left, right)
             token = next_token()
@@ -137,36 +137,45 @@ def parse(tokens:List[Token]):
     def term():
         left = factor()
         token = next_token()
-        while token and token.type in (TokenType.MULT, TokenType.DIV, TokenType.MOD):
-            op = token.type
+        while token and token.token_type in (TokenType.MULT, TokenType.DIV, TokenType.MOD):
+            op = token.token_type
             right = factor()
             left = (op, left, right)
             token = next_token()
         return left
 
     # 定义因子语法规则的解析函数
-    def factor():
-        token = next_token()
-        if token.type == TokenType.NUM:
-            return float(token.value)
-        elif token.type == TokenType.LPAREN:
-            result = expr()
-            if next_token().type != TokenType.RPAREN:
-                raise Exception("Expected closing parenthesis")
-            return result
-        else:
-            raise Exception("Expected number or opening parenthesis")
+    # def factor():
+    #     token = next_token()
+    #     if token != None:
+    #         if token.token_type == TokenType.NUM:
+    #             return float(token.value)
+    #         elif token.token_type == TokenType.LPAREN:
+    #             result = expr()
+
+    #             if next_token() != None:
+    #                 if next_token().token_type != TokenType.RPAREN
+    #                 raise Exception("Expected closing parenthesis")
+    #             return result
+    #         else:
+    #             raise Exception("Expected number or opening parenthesis")
+def complex(**kwargs):
+    def Bind(func:Callable):
+        def wapper():
+            print("start")
+            func(kwargs)
+            print("finished")
+        return wapper
+    return Bind
+
+@complex(some="")
+def bind(**kwargs):
+    pass
+
+       
 
 
 if __name__ == '__main__':
-    tokens = lexer("""
-    1+2/4 = 23.3412
-    12 > 45
-    62 < 43
-    (23+45)
-    ^12
-    ~333
-    """)
-    parser_tokens = parse(tokens)
-    print(tokens)
+    bind(sss=12)
+    
     

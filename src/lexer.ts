@@ -1,172 +1,267 @@
 enum TokenType {
-    NUM = 0, // 数字 0-9.
-    PLUS = 1, // 加号 +
-    MINUS = 2, // 减号 -
-    MULT = 3, // 乘号 *
-    DIV = 4, // 除号 /
-    MOD = 5, // 求模符号 %
-    EQ = 6, // 等于号 =
-    GT = 7, // 大于号 >
-    LT = 8, // 小于号 <
-    AND = 9, // 与 &
-    OR = 10, // 或 |
-    XOR = 11, // 异或 ^
-    NOT = 13, // 取反 ~
-    LPARENT = 14, // 左圆括号 (
-    RPARENT = 15, // 右圆括号 )
-    LBRACES = 16, // 左花括号 {
-    RBRACES = 17, // 右花括号 }
-    LBRACKETS = 18, // 左方括号 [
-    RBRACKETS = 19, // 右方括号 ]
-    KEYWORD_IF = 20, // 关键字 if
-    KEYWORD_ELSE = 21, // 关键字 else
-    KEYWORD_WHILE = 22, // 关键字 while
-    KEYWORD_RETURN = 23, // 关键字 return
-    KEYWORD_CALL,     // 关键字 call
-    KEYWORD_FOR,     // 关键字 for
-    KEYWORD_CHANNEL, // 关键字 channel
+  NUM = 0, // 数字 0-9.
+  PLUS = 1, // 加号 +
+  MINUS = 2, // 减号 -
+  MULT = 3, // 乘号 *
+  DIV = 4, // 除号 /
+  MOD = 5, // 求模符号 %
+  EQ = 6, // 等于号 =
+  GT = 7, // 大于号 >
+  LT = 8, // 小于号 <
+  AND = 9, // 与 &
+  OR = 10, // 或 |
+  XOR = 11, // 异或 ^
+  NOT = 13, // 取反 ~
+  NE = 14, // 不等于
+  EXTENDS = 15,
+  LPARENT = 16, // 左圆括号 (
+  RPARENT = 17, // 右圆括号 )
+  LBRACES = 18, // 左花括号 {
+  RBRACES = 19, // 右花括号 }
+  LBRACKETS = 20, // 左方括号 [
+  RBRACKETS = 21, // 右方括号 ]
+  KEYWORD_IF = 22, // 关键字 if
+  KEYWORD_ELSE = 23, // 关键字 else
+  KEYWORD_WHILE = 24, // 关键字 while
+  KEYWORD_RETURN = 25, // 关键字 return
+  KEYWORD_CALL, // 关键字 call
+  KEYWORD_FOR, // 关键字 for
+  KEYWORD_CHANNEL, // 关键字 channel,
+  KEYWORD_VARIABLE,
+  SYMBOL,
+  RANGE,
+  DOT
 }
 
 class Token {
-    constructor(
-        public readonly token: TokenType,
-        public readonly value: string
-    ) {}
+  constructor(public readonly token: TokenType, public readonly value: string|number) {}
 }
 
 export function Lexer(code: string) {
-    // 数字
-    let NUMERIC = "0123456789";
-    // 十六进制
-    let HEX = NUMERIC + "abcdefABCDEF";
-    // 字母
-    let ALPHNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    // 操作符
-    let OPERATE = "+-*/%~<!|~=>"
-    // 空白字符
-    let WHITESPACE = "\t\n ";
-    let tokens: Token[] = [];
-    let codeIndex = 0
-    while (codeIndex < code.length) {
-        let singleChar = code[codeIndex];
-        if (NUMERIC.includes(singleChar)) {
-            let n = codeIndex + 1;
-            while (n < code.length && (NUMERIC + "_.").includes(code[n])) {
-                n++;
+  // 数字
+  let NUMERIC = "0123456789";
+  // 十六进制
+  let HEX = "abcdefABCDEF";
+  // 字母
+  let ALPHNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz$";
+  // 操作符
+  let OPERATE = "+-*/%~<!|~=>@.";
+  // 空白字符
+  let WHITESPACE = "\t\n ";
+  let tokens: Token[] = [];
+  let codeIndex = 0;
+  while (codeIndex < code.length) {
+    let singleChar = code[codeIndex];
+    if (NUMERIC.includes(singleChar)) {
+      let n = codeIndex + 1;
+      while (n < code.length && (NUMERIC + "_." + HEX).includes(code[n])) {
+        n++;
+      }
+      if(code.slice(codeIndex, n).includes(".")){
+          
+          tokens.push(new Token(TokenType.NUM, parseFloat(code.slice(codeIndex, n))));
+        }else{
+          tokens.push(new Token(TokenType.NUM, parseInt(code.slice(codeIndex, n))));
+      }
+      codeIndex = n;
+    } else if (WHITESPACE.includes(singleChar)) {
+      codeIndex++;
+    } else if (OPERATE.includes(singleChar)) {
+      switch (singleChar) {
+        case "&":
+          tokens.push(new Token(TokenType.AND, singleChar));
+          codeIndex++;
+          break;
+        case "|":
+          tokens.push(new Token(TokenType.OR, singleChar));
+          codeIndex++;
+          break;
+        case "^":
+          tokens.push(new Token(TokenType.XOR, singleChar));
+          codeIndex++;
+          break;
+        case "%":
+          tokens.push(new Token(TokenType.MOD, singleChar));
+          codeIndex++;
+          break;
+        case "~":
+          tokens.push(new Token(TokenType.NOT, singleChar));
+          codeIndex++;
+          break;
+        case "=":
+          tokens.push(new Token(TokenType.PLUS, singleChar));
+          codeIndex++;
+          break;
+        case ".":
+            if(code.slice(codeIndex,codeIndex + 3)=== "..."){
+                tokens.push(new Token(TokenType.RANGE,code.slice(codeIndex,codeIndex+3)))
+                codeIndex+=3;
+            }else{
+                codeIndex ++;
             }
-            tokens.push(new Token(TokenType.NUM, code.slice(codeIndex, n)))
-            codeIndex = n;
-        } else if (WHITESPACE.includes(singleChar)) {
+        case "@":
+          if (code.slice(codeIndex, codeIndex + 2) === "@>") {
+            tokens.push(new Token(TokenType.EXTENDS, code.slice(codeIndex,codeIndex+2)));
+            codeIndex += 2;
+          }else{
             codeIndex++;
-        } else if (OPERATE.includes(singleChar)) {
-            switch (singleChar) {
-                case "+":
-                    tokens.push(new Token(TokenType.PLUS, singleChar))
-                    break;
-                case "-":
-                    tokens.push(new Token(TokenType.MINUS, singleChar))
-                    break;
-                case "*":
-                    tokens.push(new Token(TokenType.MULT, singleChar))
-                    break;
-                case "&":
-                    tokens.push(new Token(TokenType.AND, singleChar))
-                    break;
-                case "|":
-                    tokens.push(new Token(TokenType.OR, singleChar))
-                    break;
-                case "^":
-                    tokens.push(new Token(TokenType.XOR, singleChar))
-                    break;
-                case "%":
-                    tokens.push(new Token(TokenType.MOD, singleChar))
-                    break;
-                case "~":
-                    tokens.push(new Token(TokenType.NOT, singleChar))
-                    break;
-                case "/":
-                    tokens.push(new Token(TokenType.DIV, singleChar))
-                    break;
-                case ">":
-                    tokens.push(new Token(TokenType.GT, singleChar))
-                    break;
-                case "<":
-                    tokens.push(new Token(TokenType.LT, singleChar))
-                    break;
-                case "=":
-                    tokens.push(new Token(TokenType.PLUS, singleChar))
-                    break;
-                default:
-                    break;   
-            }
+          }
+          break;
+        case "+":
+          if (code.slice(codeIndex, codeIndex + 2) === "+=") {
+            tokens.push(new Token(TokenType.PLUS, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.PLUS, singleChar));
             codeIndex++;
-        } else if ("{}".includes(singleChar) || "[]".includes(singleChar) || "()".includes(singleChar)) {
-            switch (singleChar) {
-                case "(":
-                    tokens.push(new Token(TokenType.LPARENT, singleChar))
-                    break;
-                case ")":
-                    tokens.push(new Token(TokenType.RPARENT, singleChar))
-                    break
-                case "{":
-                    tokens.push(new Token(TokenType.LBRACES, singleChar))
-                    break;
-                case "}":
-                    tokens.push(new Token(TokenType.RBRACES, singleChar))
-                    break;
-                case "[":
-                    tokens.push(new Token(TokenType.LBRACKETS, singleChar))
-                    break;
-                case "]":
-                    tokens.push(new Token(TokenType.RBRACKETS, singleChar))
-                    tokens.push()
-                    break;
-            }
+          }
+          break;
+        case "-":
+          if (code.slice(codeIndex, codeIndex + 2) === "-=") {
+            tokens.push(new Token(TokenType.MINUS, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.MINUS, singleChar));
             codeIndex++;
-        } else if (ALPHNUM.includes(singleChar)) {
-            let w = codeIndex + 1;
-            while (w < code.length && ALPHNUM.includes(code[w])) {
-                w++;
-            }
-            let word = code.slice(codeIndex, w);
-            switch (word) {
-                case "IF":
-                case "if":
-                    tokens.push(new Token(TokenType.KEYWORD_IF, word));
-                    break;
-                case "ELSE":
-                case "else":
-                    tokens.push(new Token(TokenType.KEYWORD_ELSE, word));
-                    break;
-                case "WHILE":
-                case "while":
-                    tokens.push(new Token(TokenType.KEYWORD_WHILE, word));
-                    break;
-                case "for":
-                case "FOR":
-                    tokens.push(new Token(TokenType.KEYWORD_FOR, word));
-                    break;
-                case "CALL":
-                case "call":
-                    tokens.push(new Token(TokenType.KEYWORD_CALL, word));
-                    break;
-                case "CHANNEL":
-                case "channel":
-                    tokens.push(new Token(TokenType.KEYWORD_CHANNEL, word));
-                    break;
-                default:
-                    throw new Error("unknow keyword:" + word);
-            }
-            codeIndex = w;
-        }
-        else {
-            throw new Error("未知的字符: " + singleChar);
-        }
+          }
+          break;
+        case "/":
+          if (code.slice(codeIndex, codeIndex + 2) === "/=") {
+            tokens.push(new Token(TokenType.DIV, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.DIV, singleChar));
+            codeIndex++;
+          }
+          break;
+        case "*":
+          if (code.slice(codeIndex, codeIndex + 2) === "*=") {
+            tokens.push(new Token(TokenType.MULT, code.slice(codeIndex,codeIndex+2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.MULT, singleChar));
+            codeIndex++;
+          }
+          break;
+        case "%":
+          if (code.slice(codeIndex, codeIndex + 2) === "%=") {
+            tokens.push(new Token(TokenType.MOD, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.MOD, singleChar));
+            codeIndex ++;
+          }
+          break;
+        case ">":
+          if (code.slice(codeIndex, codeIndex + 2) === ">=") {
+            tokens.push(new Token(TokenType.GT, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.GT, singleChar));
+            codeIndex++;
+          }
+          break;
+        case "<":
+          if (code.slice(codeIndex, codeIndex + 2) === "<=") {
+            tokens.push(new Token(TokenType.LT, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.LT, singleChar));
+            codeIndex++;
+          }
+          break;
+        case "!":
+          if (code.slice(codeIndex, codeIndex + 2) === "!=") {
+            tokens.push(new Token(TokenType.NE, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex += 2;
+          } else {
+            tokens.push(new Token(TokenType.NOT, singleChar));
+            codeIndex++;
+          }
+          break;
+      }
+    } else if ("{}".includes(singleChar) || "[]".includes(singleChar) || "()".includes(singleChar)) {
+      switch (singleChar) {
+        case "(":
+          tokens.push(new Token(TokenType.LPARENT, singleChar));
+          break;
+        case ")":
+          tokens.push(new Token(TokenType.RPARENT, singleChar));
+          break;
+        case "{":
+          tokens.push(new Token(TokenType.LBRACES, singleChar));
+          break;
+        case "}":
+          tokens.push(new Token(TokenType.RBRACES, singleChar));
+          break;
+        case "[":
+          tokens.push(new Token(TokenType.LBRACKETS, singleChar));
+          break;
+        case "]":
+          tokens.push(new Token(TokenType.RBRACKETS, singleChar));
+          break;
+      }
+      codeIndex++;
+    } else if (ALPHNUM.includes(singleChar)) {
+      let w = codeIndex + 1;
+      while (w < code.length && (ALPHNUM+NUMERIC+ "_").includes(code[w])) {
+        w++;
+      }
+      let word = code.slice(codeIndex, w);
+      switch (word) {
+        case "IF":
+        case "if":
+          tokens.push(new Token(TokenType.KEYWORD_IF, word));
+          break;
+        case "ELSE":
+        case "else":
+          tokens.push(new Token(TokenType.KEYWORD_ELSE, word));
+          break;
+        case "WHILE":
+        case "while":
+          tokens.push(new Token(TokenType.KEYWORD_WHILE, word));
+          break;
+        case "for":
+        case "FOR":
+          tokens.push(new Token(TokenType.KEYWORD_FOR, word));
+          break;
+        case "CALL":
+        case "call":
+          tokens.push(new Token(TokenType.KEYWORD_CALL, word));
+          break;
+        case "CHANNEL":
+        case "channel":
+          tokens.push(new Token(TokenType.KEYWORD_CHANNEL, word));
+          break;
+        case "var":
+        case "VAR":
+          tokens.push(new Token(TokenType.KEYWORD_VARIABLE, word));
+          break;
+        default:
+          tokens.push(new Token(TokenType.SYMBOL, word));
+      }
+      codeIndex = w;
+    } else {
+      throw new Error("未知的字符: " + singleChar);
     }
-    return tokens;
+  }
+  return tokens;
 }
 
-let l = Lexer("((12+33.5+12)+12/34*32)+66.796 if 12>33 else 32 channel 3") 
+
+let l = Lexer(`
+    ((12+33.5+12)+12/34*32)+66.796
+    if 1233 else 32
+    channel A @> B 12 != 3334
+    12>= 23
+    4>= 3
+    34<= 23
+    sim += 23
+    for i ... 20{
+        12 JK 33
+        c3 d5 s6
+    }
+`);
 // this will be return:
 // [
 //   Token { token: 14, value: '(' },
@@ -195,3 +290,5 @@ let l = Lexer("((12+33.5+12)+12/34*32)+66.796 if 12>33 else 32 channel 3")
 //   Token { token: 26, value: 'channel' },
 //   Token { token: 0, value: '3' }
 // ]
+
+console.log(l);
