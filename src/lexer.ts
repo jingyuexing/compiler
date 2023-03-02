@@ -12,8 +12,12 @@ enum TokenType {
   OR, // 或 |
   XOR, // 异或 ^
   NOT, // 取反 ~
-  NE, // 不等于
-  EXTENDS,
+  LOGIC_NOT,
+    LOGIC_NE, // 不等于
+  LOGIC_EQUAL,
+  CONST_STRING,
+  LEXTENDS, // 左集成
+  REXTENDS, // 右继承
   LPARENT , // 左圆括号 (
   RPARENT , // 右圆括号 )
   LBRACES, // 左花括号 {
@@ -28,8 +32,13 @@ enum TokenType {
   KEYWORD_FOR, // 关键字 for
   KEYWORD_CHANNEL, // 关键字 channel,
   KEYWORD_VARIABLE,
+  KEYWORD_ENUM,
+  KEYWORD_DEFINE,
   SYMBOL,
   RANGE,
+  CONST_NONE,
+  CONST_TRUE,
+  CONST_FALSE,
   DOT,
   EOF
 }
@@ -44,6 +53,7 @@ export function Lexer(code: string) {
   // 十六进制
   let HEX = "abcdefABCDEF";
   // 字母
+  let STRING = "\"'`"
   let ALPHNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz$";
   // 操作符
   let OPERATE = "+-*/%~<!|~=>@.";
@@ -90,8 +100,16 @@ export function Lexer(code: string) {
           codeIndex++;
           break;
         case "=":
-          tokens.push(new Token(TokenType.PLUS, singleChar));
-          codeIndex++;
+            if(code.slice(codeIndex,codeIndex+2) === "=="){
+                tokens.push(new Token(TokenType.LOGIC_EQUAL,code.slice(codeIndex,codeIndex+2)))
+                codeIndex +=2;
+            }else if(code.slice(codeIndex,codeIndex+2) === "=>") {
+                tokens.push(new Token(TokenType.PLUS, code.slice(codeIndex,codeIndex+2)));
+                codeIndex+=2;
+            }else{
+                tokens.push(new Token(TokenType.EQ,singleChar));
+                codeIndex ++;
+            }
           break;
         case ".":
             if(code.slice(codeIndex,codeIndex + 3)=== "..."){
@@ -102,7 +120,7 @@ export function Lexer(code: string) {
             }
         case "@":
           if (code.slice(codeIndex, codeIndex + 2) === "@>") {
-            tokens.push(new Token(TokenType.EXTENDS, code.slice(codeIndex,codeIndex+2)));
+            tokens.push(new Token(TokenType.LEXTENDS, code.slice(codeIndex,codeIndex+2)));
             codeIndex += 2;
           }else{
             codeIndex++;
@@ -166,14 +184,17 @@ export function Lexer(code: string) {
           if (code.slice(codeIndex, codeIndex + 2) === "<=") {
             tokens.push(new Token(TokenType.LT, code.slice(codeIndex, codeIndex + 2)));
             codeIndex += 2;
-          } else {
-            tokens.push(new Token(TokenType.LT, singleChar));
-            codeIndex++;
+        } else if(code.slice(codeIndex,codeIndex+2) === "<@"){
+            tokens.push(new Token(TokenType.REXTENDS, code.slice(codeIndex, codeIndex + 2)));
+            codeIndex+=2;
+        }else{
+              tokens.push(new Token(TokenType.LT, singleChar));
+              codeIndex++;
           }
           break;
         case "!":
           if (code.slice(codeIndex, codeIndex + 2) === "!=") {
-            tokens.push(new Token(TokenType.NE, code.slice(codeIndex, codeIndex + 2)));
+            tokens.push(new Token(TokenType.LOGIC_NE, code.slice(codeIndex, codeIndex + 2)));
             codeIndex += 2;
           } else {
             tokens.push(new Token(TokenType.NOT, singleChar));
@@ -238,10 +259,23 @@ export function Lexer(code: string) {
         case "VAR":
           tokens.push(new Token(TokenType.KEYWORD_VARIABLE, word));
           break;
+        case "true":
+            tokens.push(new Token(TokenType.CONST_TRUE,word))
+            break;
+        case "false":
+            tokens.push(new Token(TokenType.CONST_FALSE,word))
+            break;
         default:
           tokens.push(new Token(TokenType.SYMBOL, word));
       }
       codeIndex = w;
+    }else if(STRING.includes(singleChar)){
+      let strLength = codeIndex + 1
+      while(strLength < code.length && singleChar != code[strLength]){
+        strLength ++;
+      }
+      tokens.push(new Token(TokenType.CONST_STRING,code.slice(codeIndex,strLength+=1)))
+      codeIndex = strLength;
     }else if(";".includes(singleChar)){
         tokens.push(new Token(TokenType.EOF,singleChar))
         codeIndex++;
@@ -256,15 +290,24 @@ export function Lexer(code: string) {
 let l = Lexer(`
     ((12+33.5+12)+12/34*32)+66.796
     if 1233 else 32
-    channel A @> B 12 != 3334;
+    channel A <@ B 12 != 3334;
     12>= 23;
     4>= 3;
     34<= 23;
+    s = true;
     sim += 23;
     for i ... 20{
         12 JK 33;
         c3 d5 s6;
         $0 c4 Margin;
+        let s = 33;
+    }
+    if(s == 33){
+        k = 45
+    }
+    var s = "hello~y world";
+    var m = "JBS";
+    if(m == 23){
         let s = 33;
     }
 `);
