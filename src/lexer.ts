@@ -1,36 +1,37 @@
 enum TokenType {
   NUM = 0, // 数字 0-9.
-  PLUS = 1, // 加号 +
-  MINUS = 2, // 减号 -
-  MULT = 3, // 乘号 *
-  DIV = 4, // 除号 /
-  MOD = 5, // 求模符号 %
-  EQ = 6, // 等于号 =
-  GT = 7, // 大于号 >
-  LT = 8, // 小于号 <
-  AND = 9, // 与 &
-  OR = 10, // 或 |
-  XOR = 11, // 异或 ^
-  NOT = 13, // 取反 ~
-  NE = 14, // 不等于
-  EXTENDS = 15,
-  LPARENT = 16, // 左圆括号 (
-  RPARENT = 17, // 右圆括号 )
-  LBRACES = 18, // 左花括号 {
-  RBRACES = 19, // 右花括号 }
-  LBRACKETS = 20, // 左方括号 [
-  RBRACKETS = 21, // 右方括号 ]
-  KEYWORD_IF = 22, // 关键字 if
-  KEYWORD_ELSE = 23, // 关键字 else
-  KEYWORD_WHILE = 24, // 关键字 while
-  KEYWORD_RETURN = 25, // 关键字 return
+  PLUS, // 加号 +
+  MINUS, // 减号 -
+  MULT, // 乘号 *
+  DIV, // 除号 /
+  MOD, // 求模符号 %
+  EQ, // 等于号 =
+  GT, // 大于号 >
+  LT, // 小于号 <
+  AND, // 与 &
+  OR, // 或 |
+  XOR, // 异或 ^
+  NOT, // 取反 ~
+  NE, // 不等于
+  EXTENDS,
+  LPARENT , // 左圆括号 (
+  RPARENT , // 右圆括号 )
+  LBRACES, // 左花括号 {
+  RBRACES , // 右花括号 }
+  LBRACKETS, // 左方括号 [
+  RBRACKETS, // 右方括号 ]
+  KEYWORD_IF, // 关键字 if
+  KEYWORD_ELSE, // 关键字 else
+  KEYWORD_WHILE, // 关键字 while
+  KEYWORD_RETURN, // 关键字 return
   KEYWORD_CALL, // 关键字 call
   KEYWORD_FOR, // 关键字 for
   KEYWORD_CHANNEL, // 关键字 channel,
   KEYWORD_VARIABLE,
   SYMBOL,
   RANGE,
-  DOT
+  DOT,
+  EOF
 }
 
 class Token {
@@ -241,6 +242,9 @@ export function Lexer(code: string) {
           tokens.push(new Token(TokenType.SYMBOL, word));
       }
       codeIndex = w;
+    }else if(";".includes(singleChar)){
+        tokens.push(new Token(TokenType.EOF,singleChar))
+        codeIndex++;
     } else {
       throw new Error("未知的字符: " + singleChar);
     }
@@ -252,14 +256,16 @@ export function Lexer(code: string) {
 let l = Lexer(`
     ((12+33.5+12)+12/34*32)+66.796
     if 1233 else 32
-    channel A @> B 12 != 3334
-    12>= 23
-    4>= 3
-    34<= 23
-    sim += 23
+    channel A @> B 12 != 3334;
+    12>= 23;
+    4>= 3;
+    34<= 23;
+    sim += 23;
     for i ... 20{
-        12 JK 33
-        c3 d5 s6
+        12 JK 33;
+        c3 d5 s6;
+        $0 c4 Margin;
+        let s = 33;
     }
 `);
 // this will be return:
